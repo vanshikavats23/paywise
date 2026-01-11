@@ -9,6 +9,16 @@
   --text-dark: #E5E7EB;
 }
 
+:root {
+  --card-bg: #1E293B;
+  --muted: #94A3B8;
+}
+
+body.light {
+  --card-bg: #F8FAFC;
+  --muted: #64748B;
+}
+
 /* RESET */
 * {
   box-sizing: border-box;
@@ -190,4 +200,9 @@ label {
 
 input, select {
   border-radius: 12px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
