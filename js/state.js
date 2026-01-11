@@ -1,9 +1,4 @@
 const State = {
-  groups: JSON.parse(localStorage.getItem("paywise_groups")) || [],
-  currentView: "dashboard",
-  activeGroupId: null
+  view: "login",
+  theme: localStorage.getItem("theme") || "light"
 };
-
-function saveState() {
-  localStorage.setItem("paywise_groups", JSON.stringify(State.groups));
-}
