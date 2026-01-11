@@ -76,12 +76,10 @@ function renderGroup() {
 
       <!-- SETTLE UP PLACEHOLDER -->
       <div class="auth-card" style="margin-top:24px;">
-        <h3>Settle Up</h3>
-        <p style="color:#64748B;">
-          Smart settlement coming next — this will minimize transactions.
-        </p>
-        <button disabled style="opacity:0.6;">Settle Balances</button>
-      </div>
+  <h3>Settle Up</h3>
+  ${renderSettlements(group)}
+</div>
+
     </main>
   `;
 }
@@ -285,4 +283,70 @@ function goBack() {
   State.activeGroupId = null;
   State.view = "dashboard";
   renderApp();
+}
+/* ---------------- SETTLEMENTS ---------------- */
+function calculateSettlements(group) {
+  const balances = calculateBalances(group);
+
+  const debtors = [];
+  const creditors = [];
+
+  Object.entries(balances).forEach(([name, amount]) => {
+    if (amount < 0) {
+      debtors.push({ name, amount: Math.abs(amount) });
+    }
+    if (amount > 0) {
+      creditors.push({ name, amount });
+    }
+  });
+
+  const settlements = [];
+  let i = 0, j = 0;
+
+  while (i < debtors.length && j < creditors.length) {
+    const debtor = debtors[i];
+    const creditor = creditors[j];
+
+    const payAmount = Math.min(debtor.amount, creditor.amount);
+
+    settlements.push({
+      from: debtor.name,
+      to: creditor.name,
+      amount: payAmount
+    });
+
+    debtor.amount -= payAmount;
+    creditor.amount -= payAmount;
+
+    if (debtor.amount === 0) i++;
+    if (creditor.amount === 0) j++;
+  }
+
+  return settlements;
+}
+/* ---------------- RENDER SETTLEMENTS ---------------- */
+function renderSettlements(group) {
+  const settlements = calculateSettlements(group);
+
+  if (settlements.length === 0) {
+    return `<p style="color:#64748B;">All settled 🎉</p>`;
+  }
+
+  return `
+    ${settlements.map(s => `
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        padding:12px;
+        margin-top:8px;
+        border-radius:10px;
+        background:#1E293B;
+      ">
+        <span>
+          <strong>${s.from}</strong> pays <strong>${s.to}</strong>
+        </span>
+        <span>₹${s.amount.toFixed(2)}</span>
+      </div>
+    `).join("")}
+  `;
 }
