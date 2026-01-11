@@ -24,6 +24,7 @@ function renderGroup() {
     <!-- MAIN -->
     <main class="main">
       <button onclick="goBack()" style="margin-bottom:16px;">← Back</button>
+  
 
       <!-- MEMBERS -->
       <div class="auth-card">
@@ -174,58 +175,85 @@ function renderExpenses(group) {
   }
 
   return `
-    ${group.expenses.map(e => `
-      <div style="
-        display:flex;
-        justify-content:space-between;
-        padding:12px;
-        margin-top:10px;
-        border-radius:12px;
-        background:#1E293B;
-      ">
-        <div>
-          <strong>${e.description}</strong><br/>
-          <span style="font-size:13px; color:#94A3B8;">
-            Paid by ${e.paidBy}
-          </span>
+    ${group.expenses.map(e => {
+      const splitLabel =
+        e.splitType === "equal"
+          ? "Split equally"
+          : "Custom split";
+
+      return `
+        <div style="
+          padding:12px;
+          margin-top:10px;
+          border-radius:12px;
+          background:#1E293B;
+        ">
+          <div style="display:flex; justify-content:space-between;">
+            <strong>${e.description}</strong>
+            <strong>₹${e.amount}</strong>
+          </div>
+
+          <div style="font-size:13px; color:#94A3B8; margin-top:4px;">
+            Paid by ${e.paidBy} • ${splitLabel}
+          </div>
         </div>
-        <div>₹${e.amount}</div>
-      </div>
-    `).join("")}
+      `;
+    }).join("")}
   `;
 }
 
-/* ---------------- BALANCE CALCULATION ---------------- */
 
-function renderBalances(group) {
+/* ---------------- BALANCE CALCULATION ---------------- */
+function calculateBalances(group) {
   const balances = {};
   group.members.forEach(m => balances[m] = 0);
 
   group.expenses.forEach(exp => {
+
+    /* -------- NORMALIZE SPLITS -------- */
+
+    let splits = {};
+
+    // If custom split but splits missing → fallback to equal
+    if (
+      exp.splitType === "custom" &&
+      (!exp.splits || Object.keys(exp.splits).length === 0)
+    ) {
+      const equalShare = exp.amount / group.members.length;
+      group.members.forEach(m => {
+        splits[m] = equalShare;
+      });
+    }
+
+    // Proper equal split
     if (exp.splitType === "equal") {
       const share = exp.amount / group.members.length;
-
       group.members.forEach(m => {
-        if (m === exp.paidBy) {
-          balances[m] += exp.amount - share;
-        } else {
-          balances[m] -= share;
-        }
+        splits[m] = share;
       });
     }
 
-    if (exp.splitType === "custom") {
-      group.members.forEach(m => {
-        const shouldPay = exp.splits[m] || 0;
-
-        if (m === exp.paidBy) {
-          balances[m] += exp.amount - shouldPay;
-        } else {
-          balances[m] -= shouldPay;
-        }
-      });
+    // Proper custom split
+    if (exp.splitType === "custom" && Object.keys(exp.splits).length > 0) {
+      splits = exp.splits;
     }
+
+    /* -------- APPLY BALANCES -------- */
+
+    // Everyone owes their share
+    group.members.forEach(m => {
+      balances[m] -= splits[m] || 0;
+    });
+
+    // Payer gets full amount
+    balances[exp.paidBy] += exp.amount;
   });
+
+  return balances;
+}
+
+function renderBalances(group) {
+  const balances = calculateBalances(group);
 
   return `
     ${Object.entries(balances).map(([name, amount]) => `
@@ -249,6 +277,7 @@ function renderBalances(group) {
     `).join("")}
   `;
 }
+
 
 /* ---------------- NAVIGATION ---------------- */
 
