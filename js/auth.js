@@ -10,7 +10,16 @@ function renderLogin() {
       <h2>Welcome back</h2>
 
       <input id="loginEmail" placeholder="Email" />
-      <input id="loginPassword" type="password" placeholder="Password" />
+      <div class="password-field">
+  <input
+    id="loginPassword"
+    type="password"
+    placeholder="Password"
+  />
+  <span class="toggle-password" onclick="togglePassword('loginPassword', this)">
+    👁️
+  </span>
+</div>
 
       <p id="loginError" style="color:#dc2626; font-size:13px;"></p>
 
@@ -32,7 +41,17 @@ function renderSignup() {
 
       <input id="signupName" placeholder="Name" />
       <input id="signupEmail" placeholder="Email" />
-      <input id="signupPassword" type="password" placeholder="Password" />
+      <div class="password-field">
+  <input
+    id="signupPassword"
+    type="password"
+    placeholder="Password"
+  />
+  <span class="toggle-password" onclick="togglePassword('signupPassword', this)">
+    👁️
+  </span>
+</div>
+
 
       <p id="signupError" style="color:#dc2626; font-size:13px;"></p>
 
@@ -162,5 +181,20 @@ async function handleSignup() {
 
   } catch (err) {
     error.textContent = "Server error. Try again.";
+  }
+}
+/* ===============================
+   PASSWORD TOGGLE
+================================ */
+
+function togglePassword(inputId, icon) {
+  const input = document.getElementById(inputId);
+
+  if (input.type === "password") {
+    input.type = "text";
+    icon.textContent = "🙈";
+  } else {
+    input.type = "password";
+    icon.textContent = "👁️";
   }
 }
