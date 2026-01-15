@@ -32,7 +32,7 @@ function renderSignup() {
 
       <input id="signupName" placeholder="Name" />
       <input id="signupEmail" placeholder="Email" />
-      <input id="signupPassword" type="password" />
+      <input id="signupPassword" type="password" placeholder="Password" />
 
       <p id="signupError" style="color:#dc2626; font-size:13px;"></p>
 
@@ -54,10 +54,10 @@ function isValidEmail(email) {
 }
 
 /* ===============================
-   LOGIN
+   LOGIN (BACKEND)
 ================================ */
 
-function handleLogin() {
+async function handleLogin() {
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPassword").value.trim();
   const error = document.getElementById("loginError");
@@ -74,34 +74,38 @@ function handleLogin() {
     return;
   }
 
-  const storedUser = JSON.parse(localStorage.getItem("paywise_user"));
+  try {
+    const res = await fetch("http://localhost:5001/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
 
-  if (!storedUser) {
-    error.textContent = "No account found. Please sign up.";
-    return;
+    const data = await res.json();
+
+    if (!data.success) {
+      error.textContent = data.message;
+      return;
+    }
+
+    // ✅ SAVE TOKEN + USER
+    localStorage.setItem("paywise_token", data.token);
+    State.user = data.user;
+    State.view = "dashboard";
+    renderApp();
+
+  } catch (err) {
+    error.textContent = "Server error. Try again.";
   }
-
-  if (email !== storedUser.email) {
-    error.textContent = "Email not registered";
-    return;
-  }
-
-  if (password !== storedUser.password) {
-    error.textContent = "Incorrect password";
-    return;
-  }
-
-  /* ---- AUTH SUCCESS ---- */
-  State.user = storedUser;          // 🔑 persist session in memory
-  State.view = "dashboard";
-  renderApp();
 }
 
 /* ===============================
-   SIGNUP
+   SIGNUP (BACKEND)
 ================================ */
 
-function handleSignup() {
+async function handleSignup() {
   const name = document.getElementById("signupName").value.trim();
   const email = document.getElementById("signupEmail").value.trim();
   const password = document.getElementById("signupPassword").value.trim();
@@ -124,13 +128,39 @@ function handleSignup() {
     return;
   }
 
-  const user = { name, email, password };
+  try {
+    const res = await fetch("http://localhost:5001/api/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ name, email, password })
+    });
 
-  // Save permanently
-  localStorage.setItem("paywise_user", JSON.stringify(user));
+    const data = await res.json();
 
-  /* ---- AUTH SUCCESS ---- */
-  State.user = user;                // 🔑 persist session in memory
-  State.view = "dashboard";
-  renderApp();
+    if (!data.success) {
+      error.textContent = data.message;
+      return;
+    }
+
+    // ✅ AUTO LOGIN AFTER SIGNUP
+    const loginRes = await fetch("http://localhost:5001/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    const loginData = await loginRes.json();
+
+    localStorage.setItem("paywise_token", loginData.token);
+    State.user = loginData.user;
+    State.view = "dashboard";
+    renderApp();
+
+  } catch (err) {
+    error.textContent = "Server error. Try again.";
+  }
 }

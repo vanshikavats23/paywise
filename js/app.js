@@ -35,24 +35,40 @@ function renderApp() {
 
 
 // APP BOOTSTRAP
-// APP BOOTSTRAP
-window.onload = () => {
+window.onload = async () => {
   const loader = document.getElementById("loader");
   const app = document.getElementById("app");
 
-  // 🔑 AUTO LOGIN CHECK
-  const savedUser = localStorage.getItem("paywise_user");
-
-  if (savedUser) {
-    State.user = JSON.parse(savedUser);
-    State.view = "dashboard";
-  } else {
-    State.view = "login";
-  }
-
-  setTimeout(() => {
+  setTimeout(async () => {
     loader.style.display = "none";
     app.style.display = "flex";
+
+    const token = localStorage.getItem("paywise_token");
+
+    if (token) {
+      try {
+        const res = await fetch("http://localhost:5001/api/me", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          State.user = data.user;
+          State.view = "dashboard";
+        } else {
+          localStorage.removeItem("paywise_token");
+          State.view = "login";
+        }
+      } catch {
+        State.view = "login";
+      }
+    } else {
+      State.view = "login";
+    }
+
     renderApp();
   }, 1200);
 };

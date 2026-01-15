@@ -191,9 +191,8 @@ function toggleSettings() {
 }
 /* ---------------- LOGOUT ---------------- */
 function logout() {
-  localStorage.removeItem("paywise_user");
+  localStorage.removeItem("paywise_token");
   State.user = null;
   State.view = "login";
   renderApp();
 }
-
